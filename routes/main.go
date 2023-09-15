@@ -27,5 +27,6 @@ func InitRoutes(app *echo.Echo) {
 		users := protected.Group("/users")
 		users.GET("/detail", userController.Detail)
 		users.POST("/transfer", userController.Transfer)
+		users.DELETE("", userController.DeleteAccount)
 	}
 }

@@ -65,5 +65,33 @@ func (u User) Detail(ctx echo.Context) error {
 }
 
 func (u User) Transfer(ctx echo.Context) error {
+	reqBody := dto.TransferReqBody{}
+	if err := ctx.Bind(&reqBody); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, helpers.GenerateErrorResponse("failed to transfer", err.Error()))
+	}
+
+	user := ctx.Get("currentUser").(model.User)
+	receiver, err := u.Repository.FindById(reqBody.ReceiverId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, helpers.GenerateErrorResponse("receiver not found", err.Error()))
+	}
+
+	err = u.Repository.Transfer(&user, &receiver, reqBody.Amount)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, helpers.GenerateErrorResponse("failed to transfer", err.Error()))
+	}
+
 	return ctx.JSON(http.StatusOK, "OK")
+}
+
+func (u User) DeleteAccount(ctx echo.Context) error {
+	user := ctx.Get("currentUser").(model.User)
+	err := u.Repository.DeleteAccount(&user)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, helpers.GenerateErrorResponse("failed to delete account", err.Error()))
+	}
+
+	return ctx.JSON(http.StatusOK, echo.Map{
+		"message": "success delete account",
+	})
 }

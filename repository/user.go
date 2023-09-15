@@ -27,6 +27,7 @@ func (u User) Register(newUser dto.RegisterBody) (model.User, error) {
 		FullName:      newUser.FullName,
 		Password:      helpers.HashPassword(newUser.Password),
 		DepositAmount: 0,
+		Transactions:  []model.Transaction{},
 	}
 
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
@@ -68,4 +69,45 @@ func (u User) FindById(id string) (model.User, error) {
 	}
 
 	return doc, nil
+}
+
+func (u User) Transfer(sender, receiver *model.User, amount float64) error {
+	coll := u.DB.Collection(u.Collection)
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+
+	senderFilter := bson.M{"_id": bson.M{"$eq": sender.ID}}
+	senderChanges := bson.M{"$set": model.User{DepositAmount: sender.DepositAmount - amount}}
+	newTrans := model.Transaction{ID: primitive.NewObjectID(), ReceiverID: receiver.ID, Amount: amount}
+	senderTransferItem := bson.D{
+		{"$push", bson.D{
+			{"transactions", newTrans},
+		}}}
+
+	_, err := coll.UpdateOne(ctx, senderFilter, senderChanges)
+	if err != nil {
+		return err
+	}
+
+	_, err = coll.UpdateOne(ctx, senderFilter, senderTransferItem)
+	if err != nil {
+		return err
+	}
+
+	receiverFilter := bson.M{"_id": bson.M{"$eq": receiver.ID}}
+	receiverChanges := bson.M{"$set": model.User{DepositAmount: receiver.DepositAmount + amount}}
+	_, err = coll.UpdateOne(ctx, receiverFilter, receiverChanges)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u User) DeleteAccount(user *model.User) error {
+	coll := u.DB.Collection(u.Collection)
+	userFilter := bson.M{"_id": bson.M{"$eq": user.ID}}
+
+	_, err := coll.DeleteOne(context.TODO(), userFilter)
+
+	return err
 }
