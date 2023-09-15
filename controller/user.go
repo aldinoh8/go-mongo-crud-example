@@ -5,6 +5,8 @@ import (
 	"example/helpers"
 	"example/model"
 	"example/repository"
+	"example/services"
+	"fmt"
 	"net/http"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -13,10 +15,11 @@ import (
 
 type User struct {
 	Repository repository.User
+	Mailer     services.Mailer
 }
 
-func NewUserController(r repository.User) User {
-	return User{Repository: r}
+func NewUserController(r repository.User, m services.Mailer) User {
+	return User{Repository: r, Mailer: m}
 }
 
 func (u User) Register(ctx echo.Context) error {
@@ -80,6 +83,9 @@ func (u User) Transfer(ctx echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, helpers.GenerateErrorResponse("failed to transfer", err.Error()))
 	}
+
+	notificationMessage := fmt.Sprintf("successfully transfer %v to %s", reqBody.Amount, receiver.FullName)
+	go u.Mailer.SendMail(user.Email, "transaction notification", notificationMessage)
 
 	return ctx.JSON(http.StatusOK, "OK")
 }

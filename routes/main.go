@@ -5,15 +5,17 @@ import (
 	"example/controller"
 	"example/middleware"
 	"example/repository"
+	"example/services"
 
 	"github.com/labstack/echo/v4"
 )
 
 func InitRoutes(app *echo.Echo) {
 	db := config.InitDB()
+	mailerService := services.NewMailer("http://localhost:8001")
 
 	userRepository := repository.NewUserRepository(db)
-	userController := controller.NewUserController(userRepository)
+	userController := controller.NewUserController(userRepository, mailerService)
 	auth := app.Group("/auth")
 	{
 		auth.POST("/register", userController.Register)
