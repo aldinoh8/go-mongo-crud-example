@@ -21,7 +21,7 @@ func NewUserRepository(db *mongo.Database) User {
 	return User{DB: db, Collection: "users"}
 }
 
-func (u User) Register(newUser dto.RegisterBody) (model.User, error) {
+func (u User) Create(newUser dto.RegisterBody) (model.User, error) {
 	doc := model.User{
 		Email:         newUser.Email,
 		FullName:      newUser.FullName,

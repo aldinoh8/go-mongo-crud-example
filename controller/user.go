@@ -14,11 +14,11 @@ import (
 )
 
 type User struct {
-	Repository repository.User
-	Mailer     services.Mailer
+	Repository repository.UserInterface
+	Mailer     services.MailerInterface
 }
 
-func NewUserController(r repository.User, m services.Mailer) User {
+func NewUserController(r repository.UserInterface, m services.MailerInterface) User {
 	return User{Repository: r, Mailer: m}
 }
 
@@ -28,7 +28,7 @@ func (u User) Register(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, helpers.GenerateErrorResponse("failed to create user", err.Error()))
 	}
 
-	newUser, err := u.Repository.Register(reqBody)
+	newUser, err := u.Repository.Create(reqBody)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, helpers.GenerateErrorResponse("failed to create user", err.Error()))
 	}
